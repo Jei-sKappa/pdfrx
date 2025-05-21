@@ -1,8 +1,9 @@
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide InteractiveViewer;
 
 import '../../pdfrx.dart';
+import 'interactive_viewer.dart';
 
 /// Viewer customization parameters.
 ///
@@ -16,6 +17,8 @@ class PdfViewerParams {
     this.layoutPages,
     this.maxScale = 8.0,
     this.minScale = 0.1,
+    this.visibleRect,
+    this.zoom,
     this.useAlternativeFitScaleAsMinScale = true,
     this.panAxis = PanAxis.free,
     this.boundaryMargin,
@@ -35,6 +38,7 @@ class PdfViewerParams {
     ),
     this.panEnabled = true,
     this.scaleEnabled = true,
+    this.onWheelDelta,
     this.onInteractionEnd,
     this.onInteractionStart,
     this.onInteractionUpdate,
@@ -55,6 +59,8 @@ class PdfViewerParams {
     this.linkHandlerParams,
     this.viewerOverlayBuilder,
     this.pageOverlaysBuilder,
+    this.childBuilder,
+    this.renderChildAbovePDF = false,
     this.loadingBannerBuilder,
     this.errorBannerBuilder,
     this.linkWidgetBuilder,
@@ -113,6 +119,10 @@ class PdfViewerParams {
   /// Please note that the value is not used if [useAlternativeFitScaleAsMinScale] is true.
   /// See [useAlternativeFitScaleAsMinScale] for the details.
   final double minScale;
+
+  final Rect? visibleRect;
+
+  final double? zoom;
 
   /// If true, the minimum scale is set to the calculated [PdfViewerController.alternativeFitScale].
   ///
@@ -183,6 +193,9 @@ class PdfViewerParams {
 
   /// See [InteractiveViewer.scaleEnabled] for details.
   final bool scaleEnabled;
+
+  /// See [InteractiveViewer.onWheelDelta] for details.
+  final void Function(Offset scrollDelta)? onWheelDelta;
 
   /// See [InteractiveViewer.onInteractionEnd] for details.
   final GestureScaleEndCallback? onInteractionEnd;
@@ -374,6 +387,15 @@ class PdfViewerParams {
   /// },
   /// ```
   final PdfPageOverlaysBuilder? pageOverlaysBuilder;
+
+  /// Add a child widget to the PDF's CustomPaint.
+  ///
+  /// You can decide to show the child above or below the PDF content by
+  /// setting the [renderChildAbovePDF] parameter.
+  final PdfChildBuilder? childBuilder;
+
+  /// If true, the child widget will be painted above the PDF content.
+  final bool renderChildAbovePDF;
 
   /// Build loading banner.
   ///
@@ -667,6 +689,14 @@ typedef PdfViewerHandleLinkTap = bool Function(Offset position);
 /// [page] is the page.
 typedef PdfPageOverlaysBuilder = List<Widget> Function(
     BuildContext context, Rect pageRect, PdfPage page);
+
+/// Function to build PDF's child.
+///
+/// [pageLayout] is the layout of the page.
+typedef PdfChildBuilder = Widget Function(
+  BuildContext context,
+  PdfPageLayout pageLayout,
+);
 
 /// Function to build loading banner.
 ///

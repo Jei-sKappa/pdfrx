@@ -13,7 +13,6 @@ import 'package:synchronized/extension.dart';
 import 'package:vector_math/vector_math_64.dart' as vec;
 
 import '../../pdfrx.dart';
-import 'interactive_viewer.dart' as iv;
 import 'pdf_error_widget.dart';
 import 'pdf_page_links_overlay.dart';
 import 'pdf_page_text_overlay.dart';
@@ -421,36 +420,48 @@ class _PdfViewerState extends State<PdfViewer>
                 _calcZoomStopTable();
                 return Stack(
                   children: [
-                    iv.InteractiveViewer(
-                      transformationController: _txController,
-                      constrained: false,
-                      boundaryMargin: widget.params.boundaryMargin ??
-                          const EdgeInsets.all(double.infinity),
-                      maxScale: widget.params.maxScale,
-                      minScale: _alternativeFitScale != null
-                          ? _alternativeFitScale! / 2
-                          : 0.1,
-                      panAxis: widget.params.panAxis,
-                      panEnabled: widget.params.panEnabled,
-                      scaleEnabled: widget.params.scaleEnabled,
-                      onInteractionEnd: widget.params.onInteractionEnd,
-                      onInteractionStart: widget.params.onInteractionStart,
-                      onInteractionUpdate: widget.params.onInteractionUpdate,
-                      interactionEndFrictionCoefficient:
-                          widget.params.interactionEndFrictionCoefficient,
-                      onWheelDelta: widget.params.scrollByMouseWheel != null
-                          ? _onWheelDelta
+                    // iv.InteractiveViewer(
+                    //   transformationController: _txController,
+                    //   constrained: false,
+                    //   boundaryMargin: widget.params.boundaryMargin ??
+                    //       const EdgeInsets.all(double.infinity),
+                    //   maxScale: widget.params.maxScale,
+                    //   minScale: _alternativeFitScale != null
+                    //       ? _alternativeFitScale! / 2
+                    //       : 0.1,
+                    //   panAxis: widget.params.panAxis,
+                    //   panEnabled: widget.params.panEnabled,
+                    //   scaleEnabled: widget.params.scaleEnabled,
+                    //   onInteractionEnd: widget.params.onInteractionEnd,
+                    //   onInteractionStart: widget.params.onInteractionStart,
+                    //   onInteractionUpdate: widget.params.onInteractionUpdate,
+                    //   interactionEndFrictionCoefficient:
+                    //       widget.params.interactionEndFrictionCoefficient,
+                    //   onWheelDelta: widget.params.scrollByMouseWheel != null
+                    //       ? _onWheelDelta
+                    //       : null,
+                    // PDF pages
+                    // child:
+                    CustomPaint(
+                      painter: widget.params.renderChildAbovePDF
+                          ? _CustomPainter.fromFunction(_customPaint)
                           : null,
-                      // PDF pages
-                      child: CustomPaint(
-                        foregroundPainter:
-                            _CustomPainter.fromFunction(_customPaint),
-                        size: _layout!.documentSize,
+                      foregroundPainter: widget.params.renderChildAbovePDF
+                          ? null
+                          : _CustomPainter.fromFunction(_customPaint),
+                      size: _layout!.documentSize,
+                      child: widget.params.childBuilder?.call(
+                        context,
+                        _layout!,
                       ),
                     ),
+                    // ),
                     ..._buildPageOverlayWidgets(),
                     if (_canvasLinkPainter.isEnabled)
-                      _canvasLinkPainter.linkHandlingOverlay(_viewSize!),
+                      _canvasLinkPainter.linkHandlingOverlay(
+                        context,
+                        _viewSize!,
+                      ),
                     if (widget.params.viewerOverlayBuilder != null)
                       ...widget.params.viewerOverlayBuilder!(
                         context,
@@ -561,7 +572,9 @@ class _PdfViewerState extends State<PdfViewer>
     return false;
   }
 
-  Rect get _visibleRect => _txController.value.calcVisibleRect(_viewSize!);
+  Rect get _visibleRect =>
+      widget.params.visibleRect ??
+      _txController.value.calcVisibleRect(_viewSize!);
 
   /// Set the current page number.
   ///
@@ -1145,6 +1158,7 @@ class _PdfViewerState extends State<PdfViewer>
       -delta.dy * widget.params.scrollByMouseWheel!,
     );
     _txController.value = m;
+    widget.params.onWheelDelta?.call(delta);
   }
 
   /// Restrict matrix to the safe range.
@@ -1471,7 +1485,7 @@ class _PdfViewerState extends State<PdfViewer>
     return true;
   }
 
-  double get _currentZoom => _txController.value.zoom;
+  double get _currentZoom => widget.params.zoom ?? _txController.value.zoom;
 
   PdfPageHitTestResult? _getPdfPageHitTestResult(
     Offset offset, {
@@ -1528,7 +1542,7 @@ class _PdfViewerState extends State<PdfViewer>
 
   RenderBox? get _renderBox {
     final renderBox = context.findRenderObject();
-    if (renderBox is! RenderBox) return null;
+    if (renderBox is! RenderBox || !renderBox.hasSize) return null;
     return renderBox;
   }
 
@@ -2162,9 +2176,11 @@ class _CanvasLinkPainter {
   }
 
   /// Creates a [GestureDetector] for handling link taps and mouse cursor.
-  Widget linkHandlingOverlay(Size size) {
+  Widget linkHandlingOverlay(BuildContext context, Size size) {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
+      // Fix text selection focus not released when tapping on the link
+      onTapDown: (_) => FocusScope.of(context).unfocus(),
       // link taps
       onTapUp: (details) => _handleLinkTap(details.localPosition),
       child: StatefulBuilder(builder: (context, setState) {
