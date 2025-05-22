@@ -63,6 +63,8 @@ class PdfViewerParams {
     this.onKey,
     this.keyHandlerParams = const PdfViewerKeyHandlerParams(),
     this.forceReload = false,
+    this.visibleRect,
+    this.zoom,
   });
 
   /// Margin around the page.
@@ -514,6 +516,10 @@ class PdfViewerParams {
   /// sometimes it is useful to force reload the viewer by setting this to true.
   final bool forceReload;
 
+  final Rect? visibleRect;
+
+  final double? zoom;
+
   /// Determine whether the viewer needs to be reloaded or not.
   ///
   bool doChangesRequireReload(PdfViewerParams? other) {
@@ -544,6 +550,9 @@ class PdfViewerParams {
         other.horizontalCacheExtent != horizontalCacheExtent ||
         other.verticalCacheExtent != verticalCacheExtent ||
         other.linkHandlerParams != linkHandlerParams;
+        // Probabily not necessary
+        // || other.visibleRect != visibleRect ||
+        // other.zoom != zoom;
   }
 
   @override
@@ -597,7 +606,9 @@ class PdfViewerParams {
         other.perPageSelectableRegionInjector == perPageSelectableRegionInjector &&
         other.onKey == onKey &&
         other.keyHandlerParams == keyHandlerParams &&
-        other.forceReload == forceReload;
+        other.forceReload == forceReload &&
+        other.visibleRect == visibleRect &&
+        other.zoom == zoom;
   }
 
   @override
@@ -649,7 +660,9 @@ class PdfViewerParams {
         perPageSelectableRegionInjector.hashCode ^
         onKey.hashCode ^
         keyHandlerParams.hashCode ^
-        forceReload.hashCode;
+        forceReload.hashCode ^
+        visibleRect.hashCode ^
+        zoom.hashCode;
   }
 }
 

@@ -15,7 +15,7 @@ import 'package:vector_math/vector_math_64.dart' as vec;
 
 import '../../pdfrx.dart';
 import '../utils/platform.dart';
-import 'interactive_viewer.dart' as iv;
+// import 'interactive_viewer.dart' as iv;
 import 'pdf_error_widget.dart';
 import 'pdf_page_links_overlay.dart';
 
@@ -383,26 +383,27 @@ class _PdfViewerState extends State<PdfViewer> with SingleTickerProviderStateMix
                   _updateLayout(Size(constraints.maxWidth, constraints.maxHeight));
                   return Stack(
                     children: [
-                      iv.InteractiveViewer(
-                        transformationController: _txController,
-                        constrained: false,
-                        boundaryMargin: widget.params.boundaryMargin ?? const EdgeInsets.all(double.infinity),
-                        maxScale: widget.params.maxScale,
-                        minScale: minScale,
-                        panAxis: widget.params.panAxis,
-                        panEnabled: widget.params.panEnabled,
-                        scaleEnabled: widget.params.scaleEnabled,
-                        onInteractionEnd: _onInteractionEnd,
-                        onInteractionStart: _onInteractionStart,
-                        onInteractionUpdate: widget.params.onInteractionUpdate,
-                        interactionEndFrictionCoefficient: widget.params.interactionEndFrictionCoefficient,
-                        onWheelDelta: widget.params.scrollByMouseWheel != null ? _onWheelDelta : null,
-                        // PDF pages
-                        child: CustomPaint(
-                          foregroundPainter: _CustomPainter.fromFunctions(_customPaint),
-                          size: _layout!.documentSize,
-                        ),
+                      // iv.InteractiveViewer(
+                      //   transformationController: _txController,
+                      //   constrained: false,
+                      //   boundaryMargin: widget.params.boundaryMargin ?? const EdgeInsets.all(double.infinity),
+                      //   maxScale: widget.params.maxScale,
+                      //   minScale: minScale,
+                      //   panAxis: widget.params.panAxis,
+                      //   panEnabled: widget.params.panEnabled,
+                      //   scaleEnabled: widget.params.scaleEnabled,
+                      //   onInteractionEnd: _onInteractionEnd,
+                      //   onInteractionStart: _onInteractionStart,
+                      //   onInteractionUpdate: widget.params.onInteractionUpdate,
+                      //   interactionEndFrictionCoefficient: widget.params.interactionEndFrictionCoefficient,
+                      //   onWheelDelta: widget.params.scrollByMouseWheel != null ? _onWheelDelta : null,
+                      //   // PDF pages
+                      //   child:
+                      CustomPaint(
+                        foregroundPainter: _CustomPainter.fromFunctions(_customPaint),
+                        size: _layout!.documentSize,
                       ),
+                      // ),
                       ..._buildPageOverlayWidgets(context),
                       if (_canvasLinkPainter.isEnabled)
                         SelectionContainer.disabled(child: _canvasLinkPainter.linkHandlingOverlay(_viewSize!)),
@@ -548,7 +549,7 @@ class _PdfViewerState extends State<PdfViewer> with SingleTickerProviderStateMix
     _txController.value = m;
   }
 
-  Rect get _visibleRect => _txController.value.calcVisibleRect(_viewSize!);
+  Rect get _visibleRect => widget.params.visibleRect ?? _txController.value.calcVisibleRect(_viewSize!);
 
   /// Set the current page number.
   ///
@@ -568,7 +569,7 @@ class _PdfViewerState extends State<PdfViewer> with SingleTickerProviderStateMix
 
   int? _guessCurrentPageNumber() {
     if (_layout == null || _viewSize == null) return null;
-    
+
     if (widget.params.calculateCurrentPageNumber != null) {
       return widget.params.calculateCurrentPageNumber!(_visibleRect, _layout!.pageLayouts, _controller!);
     }
@@ -1416,7 +1417,7 @@ class _PdfViewerState extends State<PdfViewer> with SingleTickerProviderStateMix
     return true;
   }
 
-  double get _currentZoom => _txController.value.zoom;
+  double get _currentZoom => widget.params.zoom ?? _txController.value.zoom;
 
   PdfPageHitTestResult? _getPdfPageHitTestResult(Offset offset, {required bool useDocumentLayoutCoordinates}) {
     final pages = _document?.pages;
@@ -1463,7 +1464,7 @@ class _PdfViewerState extends State<PdfViewer> with SingleTickerProviderStateMix
 
   RenderBox? get _renderBox {
     final renderBox = context.findRenderObject();
-    if (renderBox is! RenderBox) return null;
+    if (renderBox is! RenderBox || !renderBox.hasSize) return null;
     return renderBox;
   }
 
